@@ -1,5 +1,4 @@
-from http.client import HTTPException
-
+from fastapi import HTTPException
 from database import schemas, models
 from core.security import get_password_hash
 from sqlalchemy.orm import Session
@@ -56,3 +55,27 @@ def delete_user(
     db.delete(user)
     db.commit()
     return user
+
+
+def edit_user(
+        db: Session, user_id: int, user: schemas.UserEdit
+) -> models.User:
+    db_user = get_user_by_id(db, user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_data = user.dict(exclude_unset=True)
+
+    if "password" in new_data:
+        new_data["hashed_password"] = get_password_hash(new_data["password"])
+        del new_data["password"]
+
+    for key, value in new_data:
+        setattr(db_user, key, value)
+
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
