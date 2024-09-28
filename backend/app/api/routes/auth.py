@@ -6,14 +6,16 @@ from app.database.session import get_db
 from app.core import security
 from app.core.auth import authenticate_user, sign_up_new_user
 
-auth_router = r = APIRouter()
+auth_router = APIRouter()
 
 
-@r.post("/token")
+@auth_router.post("/token")
 async def login(
         db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     user = authenticate_user(db, form_data.username, form_data.password)
+    print(form_data.username, form_data.password, user)
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,7 +38,7 @@ async def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@r.post("/signup")
+@auth_router.post("/signup")
 async def signup(
         db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):

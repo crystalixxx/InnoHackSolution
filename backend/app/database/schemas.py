@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+import typing as t
 
 
 class TokenData(BaseModel):
@@ -15,3 +16,22 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+
+
+class UserEdit(UserBase):
+    password: t.Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
+class UserOut(UserBase):
+    pass
+
+
+class User(UserBase):
+    id: int
+
+    class Config:
+        orm_mode = True

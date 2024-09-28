@@ -1,95 +1,102 @@
-import uuid
-
-from typing import Optional
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, Table, DateTime, Text
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
-from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
+from typing import Optional
+
+Base = declarative_base()
+
+# Промежуточная таблица для связи задач и тегов
+tag_task_table = Table(
+    'tag_task',
+    Base.metadata,
+    Column('tag_id', Integer, ForeignKey('tag.id'), primary_key=True),
+    Column('task_id', Integer, ForeignKey('task.id'), primary_key=True)
+)
+
+# Промежуточная таблица для связи проектов и тегов
+tag_project_table = Table(
+    'tag_project',
+    Base.metadata,
+    Column('tag_id', Integer, ForeignKey('tag.id'), primary_key=True),
+    Column('project_id', Integer, ForeignKey('project.id'), primary_key=True)
+)
 
 
-class User(SQLModel, table=True):
-    __table_args__ = {'extend_existing': True}
+# Модель пользователя (User)
+class User(Base):
+    __tablename__ = "user"
 
-    id: int = Field(primary_key=True)
-    email: EmailStr = Field(unique=True, nullable=False)
-    name: str = Field(nullable=False)
-    username: str = Field(unique=True, nullable=False)
-    hashed_password: str = Field(nullable=False)
-    is_active: bool = Field(default=True)
-    is_superuser: bool = Field(default=False)
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
 
-#
-#
-# class TagAndTask(SQLModel, table=True):
-#     __table_args__ = {'extend_existing': True}
-#
-#     tag_id: Optional[int] = Field(default=None, foreign_key="tag.id", primary_key=True)
-#     task_id: Optional[int] = Field(default=None, foreign_key="task.id", primary_key=True)
-#
-#
-# class Task(SQLModel, table=True):
-#     __table_args__ = {'extend_existing': True}
-#
-#     id: int = Field(primary_key=True)
-#     title: str = Field(nullable=False)
-#     description: Optional[str] = Field(nullable=True)
-#
-#     deadline: Optional[datetime] = Field(default=None, nullable=True)
-#     urgency: Optional[int] = Field(default=None, nullable=True)
-#
-#     status_id: Optional[int] = Field(default=None, foreign_key="status.id")
-#     status: Optional["Status"] = Relationship(back_populates="tasks")
-#
-#     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
-#     author: Optional["models.User"] = Relationship(back_populates="created_tasks")
-#
-#     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
-#
-#     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
-#     project: Optional["Project"] = Relationship(back_populates="applied_tasks")
-#
-#     tags: list["Tag"] = Relationship(back_populates="tasks", link_model=TagAndTask)
-#
-#
-# class TagAndProject(SQLModel, table=True):
-#     __table_args__ = {'extend_existing': True}
-#
-#     tag_id: int | None = Field(default=None, foreign_key="tag.id", primary_key=True)
-#     project_id: int | None = Field(default=None, foreign_key="project.id", primary_key=True)
-#
-#
-# class Project(SQLModel, table=True):
-#     __table_args__ = {'extend_existing': True}
-#
-#     id: int = Field(primary_key=True)
-#     title: str = Field(nullable=False)
-#     description: str | None = Field(nullable=True)
-#
-#     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
-#     author: Optional["models.User"] = Relationship(back_populates="created_projects")
-#
-#     status_id: int | None = Field(default=None, foreign_key="status.id")
-#     status: Optional["Status"] = Relationship(back_populates='projects')
-#
-#     tags: list["Tag"] = Relationship(back_populates='projects', link_model=TagAndProject)
-#
-#     applied_tasks: list["models.Task"] = Relationship(back_populates="project")
-#
-#
-# class Status(SQLModel, table=True):
-#     __table_args__ = {'extend_existing': True}
-#
-#     id: int = Field(primary_key=True)
-#     title: str = Field(nullable=False)
-#
-#     tasks: list["models.Task"] = Relationship(back_populates="status")
-#     projects: list["Project"] = Relationship(back_populates="status")
-#
-#
-# class Tag(SQLModel, table=True):
-#     __table_args__ = {'extend_existing': True}
-#
-#     id: int = Field(primary_key=True)
-#     title: str = Field(nullable=False)
-#
-#     tasks: list["models.Task"] = Relationship(back_populates="tags", link_model=TagAndTask)
-#     projects: list["Project"] = Relationship(back_populates='tags', link_model=TagAndProject)
+    tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="user", cascade="all, delete-orphan")
+
+
+# Модель задачи (Task)
+class Task(Base):
+    __tablename__ = "task"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    deadline = Column(DateTime, nullable=True)
+    urgency = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=True)
+
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship("User", back_populates="tasks")
+
+    status_id = Column(Integer, ForeignKey('status.id'))
+    status = relationship("Status", back_populates="tasks")
+
+    project_id = Column(Integer, ForeignKey('project.id'))
+    project = relationship("Project", back_populates="tasks")
+
+    tags = relationship("Tag", secondary=tag_task_table, back_populates="tasks")
+
+
+# Модель проекта (Project)
+class Project(Base):
+    __tablename__ = "project"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship("User", back_populates="projects")
+
+    status_id = Column(Integer, ForeignKey('status.id'))
+    status = relationship("Status", back_populates="projects")
+
+    tasks = relationship("Task", back_populates="project")
+    tags = relationship("Tag", secondary=tag_project_table, back_populates="projects")
+
+
+# Модель статуса (Status)
+class Status(Base):
+    __tablename__ = "status"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+
+    tasks = relationship("Task", back_populates="status")
+    projects = relationship("Project", back_populates="status")
+
+
+# Модель тега (Tag)
+class Tag(Base):
+    __tablename__ = "tag"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+
+    tasks = relationship("Task", secondary=tag_task_table, back_populates="tags")
+    projects = relationship("Project", secondary=tag_project_table, back_populates="tags")
