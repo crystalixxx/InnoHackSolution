@@ -6,9 +6,11 @@ from database.db import engine
 
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(
+    title="InnoHack", docs_url="/api/docs", openapi_url="/api"
+)
 
-app.include_router(api_router, prefix="")
+app.include_router(api_router, prefix="/api")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 from sqlmodel import create_engine, SQLModel
 
-path = 'postgresql://localhost:admin@postgres:5432/localhost'
+from app.core import config
+
+path = config.SQLMODEL_DATABASE_URI
 
 engine = create_engine(path)
