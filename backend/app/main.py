@@ -3,6 +3,7 @@ from sqlmodel import SQLModel
 
 from api.main import api_router
 from database.db import engine
+from database.models import *
 
 import uvicorn
 

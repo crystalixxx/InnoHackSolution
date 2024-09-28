@@ -16,36 +16,36 @@ class User(SQLModel, table=True):
     is_superuser: bool = Field(default=False)
 
     created_tasks: list["Task"] = Relationship(back_populates="author")
-
     created_projects: list["Project"] = Relationship(back_populates="author")
 
-
 class TagAndTask(SQLModel, table=True):
-    tag_id: int | None = Field(default=None, foreign_key="tag.id", primary_key=True)
-    task_id: int | None = Field(default=None, foreign_key="task.id", primary_key=True)
-
+    tag_id: Optional[int] = Field(default=None, foreign_key="tag.id", primary_key=True)
+    task_id: Optional[int] = Field(default=None, foreign_key="task.id", primary_key=True)
 
 class Task(SQLModel, table=True):
     id: int = Field(primary_key=True, index=True)
     title: str = Field(nullable=False)
-    description: str | None = Field(nullable=True)
+    description: Optional[str] = Field(nullable=True)
 
-    deadline: datetime | None = Field(default=None, nullable=True)
-    urgency: int | None = Field(default=None, nullable=True)
+    deadline: Optional[datetime] = Field(default=None, nullable=True)
+    urgency: Optional[int] = Field(default=None, nullable=True)
 
-    status_id: int | None = Field(default=None, foreign_key="status.id")
-    status: Optional["Status"] = Relationship(back_populates='status')
+    status_id: Optional[int] = Field(default=None, foreign_key="status.id")
+    status: Optional["Status"] = Relationship(back_populates="status")
 
-    author_id: int | None = Field(default=None, foreign_key="user.id")
-    author: User | None = Relationship(back_populates='created_tasks')
+    author_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    author: Optional["User"] = Relationship(back_populates="created_tasks")
 
-    created_at: datetime | None = Field(default=datetime.now(timezone.utc), nullable=True)
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
 
-    reviewer: User | None = None
-    executor: User | None = None
+    reviewer_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    reviewer: Optional["User"] = Relationship(sa_relationship_kwargs={"foreign_keys": "[Task.reviewer_id]"})
 
-    project_id: int | None = Field(default=None, foreign_key="project.id")
-    project: Optional["Project"] = Relationship(back_populates='applied_tasks')
+    executor_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    executor: Optional["User"] = Relationship(sa_relationship_kwargs={"foreign_keys": "[Task.executor_id]"})
+
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    project: Optional["Project"] = Relationship(back_populates="applied_tasks")
 
     tags: list["Tag"] = Relationship(back_populates="tasks", link_model=TagAndTask)
 
