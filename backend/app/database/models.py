@@ -1,12 +1,10 @@
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, Table, DateTime, Text
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
-from typing import Optional
 
 Base = declarative_base()
 
-# Промежуточная таблица для связи задач и тегов
 tag_task_table = Table(
     'tag_task',
     Base.metadata,
@@ -14,7 +12,6 @@ tag_task_table = Table(
     Column('task_id', Integer, ForeignKey('task.id'), primary_key=True)
 )
 
-# Промежуточная таблица для связи проектов и тегов
 tag_project_table = Table(
     'tag_project',
     Base.metadata,
@@ -23,7 +20,6 @@ tag_project_table = Table(
 )
 
 
-# Модель пользователя (User)
 class User(Base):
     __tablename__ = "user"
 
@@ -39,7 +35,6 @@ class User(Base):
     projects = relationship("Project", back_populates="user", cascade="all, delete-orphan")
 
 
-# Модель задачи (Task)
 class Task(Base):
     __tablename__ = "task"
 
@@ -62,7 +57,6 @@ class Task(Base):
     tags = relationship("Tag", secondary=tag_task_table, back_populates="tasks")
 
 
-# Модель проекта (Project)
 class Project(Base):
     __tablename__ = "project"
 
@@ -80,7 +74,6 @@ class Project(Base):
     tags = relationship("Tag", secondary=tag_project_table, back_populates="projects")
 
 
-# Модель статуса (Status)
 class Status(Base):
     __tablename__ = "status"
 
@@ -91,7 +84,6 @@ class Status(Base):
     projects = relationship("Project", back_populates="status")
 
 
-# Модель тега (Tag)
 class Tag(Base):
     __tablename__ = "tag"
 
